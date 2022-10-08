@@ -1,25 +1,32 @@
 import string
 import pyautogui
 import keyboard
+import threading
 
-DIGITS = string.digits
+CHARS = string.digits
 
-def guess_iter(currentPassword: str, depth: int, maxDepth: int) -> None:
-    for digit in DIGITS:
+def guess_iter(currentPassword: str, depth: int, maxDepth: int, to_type) -> None:
+    for digit in CHARS:
       if not keyboard.is_pressed("q"):
         if depth + 1 < maxDepth:
-          guess_iter(currentPassword + digit, depth + 1, maxDepth)
+          guess_iter(currentPassword + digit, depth + 1, maxDepth, to_type)
         else:
-          # print(currentPassword + digit)
-          pyautogui.write(currentPassword + digit + "\n")
-          if pyautogui.locateOnScreen('locked.png') is None:
-            pyautogui.alert(f"Password is somehwere around: {currentPassword + digit} remember that there is a delay in when onenote registers the correct password so this number may be off by a couple digits")
-            exit()
+          to_type.append(currentPassword + digit)
 
-def start_guessing(pasBoxX: float, pasBoxY: float, start: int, digits: int) -> None:
+def start_guessing(pasBoxX: float, pasBoxY: float, start: int, digits: int, to_type) -> None:
     pyautogui.moveTo(pasBoxX, pasBoxY)
     pyautogui.click()
+
+    threads = []
     
     for i in range(start, digits + 1):
-      guess_iter("", 0, i)
-  
+      thread = threading.Thread(target=guess_iter, args=("", 0, i, to_type))
+      thread.start()
+      threads.append(thread)
+
+    while True:
+      for thread in threads:
+        if thread.is_alive():
+          break
+      else:
+        break
